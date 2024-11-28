@@ -1,8 +1,14 @@
 # Ignore Python bytecode files
 __pycache__/
 
+# Ignore instance file if it's not needed
+instance/
+
 # Ignore Vercel's default cache
 .vercel/
 
 # Ignore any other temporary or unwanted files (e.g. logs)
 *.log
+
+# Ignore environment variables file
+.env
