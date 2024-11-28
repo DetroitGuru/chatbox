@@ -1,8 +1,9 @@
-Flask==2.1.3  # or 2.2.x
-Flask-SQLAlchemy==3.1.1
-SQLAlchemy==2.0.36
+Flask==2.0.3
+Flask-SQLAlchemy==2.5.1  # Compatible with Flask 2.0.3 and SQLAlchemy 1.4.x
+SQLAlchemy==1.4.44     # Downgrade SQLAlchemy to 1.4.x
 Werkzeug==2.0.3
 gunicorn==20.1.0
 python-dotenv==0.19.2
+
 
 
