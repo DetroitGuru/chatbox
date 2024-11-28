@@ -1,17 +1,20 @@
 from flask import Flask, request, jsonify, render_template, session, abort
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
-load_dotenv()
 from datetime import datetime
 import uuid
 import os
 
+# Load environment variables
+load_dotenv()
+
 # Load secret key from environment variable (for better security)
 SECRET_KEY = os.getenv('SECRET_KEY', 'your-default-secret-key')
 
+# Initialize Flask app
 app = Flask(__name__)
 
-# Configure SQLite database URI
+# Configure SQLite database URI (consider using PostgreSQL or another DB in production)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///messages.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Disable modification tracking
 app.config['SECRET_KEY'] = SECRET_KEY  # For session management
@@ -29,9 +32,9 @@ class Message(db.Model):
     def __repr__(self):
         return f"<Message {self.username}: {self.content}>"
 
-# Create the database tables (if they don't exist already)
+# Create the database tables if they don't exist (NOTE: in production, use migrations instead)
 with app.app_context():
-    db.create_all()
+    db.create_all()  # Only for development. In production, use Flask-Migrate for migrations.
 
 # Global variable to keep track of active users
 active_users = set()
@@ -73,6 +76,8 @@ def post_message():
         else:
             return jsonify({'error': 'Invalid data'}), 400
     except Exception as e:
+        # Log the error for debugging
+        app.logger.error(f"Error posting message: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 # Endpoint to return the current online visitor count
@@ -97,4 +102,5 @@ def cleanup_user(exception=None):
         active_users.remove(user_id)
 
 if __name__ == '__main__':
+    # Ensure app runs in debug mode only in development
     app.run(debug=True)
