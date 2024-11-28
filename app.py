@@ -1,5 +1,7 @@
 from flask import Flask, request, jsonify, render_template, session, abort
 from flask_sqlalchemy import SQLAlchemy
+from dotenv import load_dotenv
+load_dotenv()
 from datetime import datetime
 import uuid
 import os
