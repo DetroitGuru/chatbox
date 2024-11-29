@@ -216,9 +216,8 @@
             </div>
             <form class="message-form" id="messageForm">
                 <div id="messageInput" class="message-input" contenteditable="true" placeholder="Message" aria-label="Enter your message"></div>
-                <button type="submit" class="send-button" aria-label="Send message">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
+                <button class="send-button" aria-label="Send message">
+  <i class="fas fa-paper-plane"></i></button>
             </form>
         </div>
         <div class="visitor-count" style="opacity: 0.75;">
@@ -298,35 +297,39 @@
     }
 
     // Render messages in the chatbox
-    function renderMessages(messages) {
-        const messagesContainer = document.getElementById('messages');
-        if (messagesContainer) {
-            messagesContainer.innerHTML = messages
-                .map(msg => {
-                    const usernameClass = msg.username === 'MOKMOBI (Dev)' ? 'dev-username' : '';
-                    const messageContentClass = msg.username === 'MOKMOBI (Dev)' ? 'dev-message-content' : '';
-                    const formattedTimestamp = new Date(msg.timestamp).toLocaleString();
+function renderMessages(messages) {
+    const messagesContainer = document.getElementById('messages');
+    if (messagesContainer) {
+        messagesContainer.innerHTML = messages
+            .map(msg => {
+                const usernameClass = msg.username === 'MOKMOBI (Dev)' ? 'dev-username' : '';
+                const messageContentClass = msg.username === 'MOKMOBI (Dev)' ? 'dev-message-content' : '';
+                const formattedTimestamp = new Date(msg.timestamp).toLocaleString();
 
-                    return `
-                        <div class="message">
-                            <div class="message-header">
-                                <span class="username ${usernameClass}">${msg.username}</span>
-                                <span class="timestamp">${formattedTimestamp}</span>
-                            </div>
-                            <p class="message-content ${messageContentClass}">${msg.content}</p>
+                return `
+                    <div class="message">
+                        <div class="message-header">
+                            <span class="username ${usernameClass}">${msg.username}</span>
+                            <span class="timestamp">${formattedTimestamp}</span>
                         </div>
-                    `;
-                })
-                .join('');
-        }
+                        <p class="message-content ${messageContentClass}">${msg.content}</p> <!-- Render HTML -->
+                    </div>
+                `;
+            })
+            .join('');
     }
+}
 
     // Handle message form submission
-    function handleMessageSubmit(event) {
-    event.preventDefault();  // Prevent page refresh on submit
+function handleMessageSubmit(event) {
+    event.preventDefault(); // Prevent page refresh on submit
+    console.log("Send button clicked");
 
     const username = document.getElementById('nameInput').value.trim();
-    const content = document.getElementById('messageInput').innerText.trim(); // Use innerText here
+    const content = document.getElementById('messageInput').innerHTML.trim(); // Getting the content of the editable div
+
+    console.log("Username: ", username);
+    console.log("Message Content: ", content);
 
     if (!username || !content) {
         alert("Please enter both your name and a message.");
@@ -335,7 +338,7 @@
 
     const messageData = { username, content };
 
-    fetch('/send_message', {
+    fetch('/chat.json', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(messageData)
@@ -350,7 +353,6 @@
     })
     .catch(error => console.error("Error sending message:", error));
 }
-
     // Event listeners for submitting the form and refreshing messages
     document.getElementById('messageForm').addEventListener('submit', handleMessageSubmit);
     document.getElementById('refreshButton').addEventListener('click', function() {
