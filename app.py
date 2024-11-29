@@ -32,14 +32,19 @@ def index():
 # Endpoint to get messages from MongoDB in JSON format
 @app.route('/chat_mesg', methods=['GET'])
 def get_messages():
-    # Retrieve all messages from the MongoDB collection
-    messages = mongo.db.messages.find()  # 'messages' is the collection name in MongoDB
-    return jsonify([{
-        'id': str(message['_id']),  # MongoDB uses ObjectId as the ID, so we convert it to string
-        'username': message['username'],
-        'content': message['content'],
-        'timestamp': message['timestamp']
-    } for message in messages])
+    try:
+        messages = mongo.db.messages.find()  # 'messages' is the collection name in MongoDB
+        if not messages:
+            app.logger.warning("No messages found in the 'messages' collection.")
+        return jsonify([{
+            'id': str(message['_id']),
+            'username': message['username'],
+            'content': message['content'],
+            'timestamp': message['timestamp']
+        } for message in messages])
+    except Exception as e:
+        app.logger.error(f"Error retrieving messages: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 # Endpoint to add a new message via POST
 @app.route('/chat_mesg', methods=['POST'])
