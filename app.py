@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, render_template, session, abort
-from flask_sqlalchemy import SQLAlchemy
+from flask_pymongo import PyMongo
 from dotenv import load_dotenv
 from datetime import datetime
 import uuid
@@ -14,30 +14,12 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'your-default-secret-key')
 # Initialize Flask app
 app = Flask(__name__)
 
-# Configure SQLite database URI (use /tmp/messages.db for Vercel deployment)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
-    'DATABASE_URL',  # Use environment variable for production, fall back to /tmp for SQLite
-    'sqlite:////tmp/messages.db'  # Default to /tmp/messages.db for local and Vercel
-)
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Disable modification tracking
+# Configure MongoDB URI (use environment variable for production, default to localhost for local dev)
+app.config['MONGO_URI'] = os.getenv('MONGO_URI', 'mongodb://localhost:27017/chatbox')  # Replace with your MongoDB URI
 app.config['SECRET_KEY'] = SECRET_KEY  # For session management
 
-# Initialize SQLAlchemy
-db = SQLAlchemy(app)
-
-# Define Message model
-class Message(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(100), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.String(20), nullable=False)
-
-    def __repr__(self):
-        return f"<Message {self.username}: {self.content}>"
-
-# Create the database tables if they don't exist (NOTE: in production, use migrations instead)
-with app.app_context():
-    db.create_all()  # Only for development. In production, use Flask-Migrate for migrations.
+# Initialize PyMongo
+mongo = PyMongo(app)
 
 # Global variable to keep track of active users
 active_users = set()
@@ -47,17 +29,16 @@ active_users = set()
 def index():
     return render_template('chatbox.html')
 
-# Endpoint to get messages from the database in JSON format
+# Endpoint to get messages from MongoDB in JSON format
 @app.route('/chat.json', methods=['GET'])
 def get_messages():
-    # Retrieve all messages from the database
-    messages = Message.query.all()
-    # Convert messages to a list of dictionaries
+    # Retrieve all messages from the MongoDB collection
+    messages = mongo.db.messages.find()  # 'messages' is the collection name in MongoDB
     return jsonify([{
-        'id': message.id,
-        'username': message.username,
-        'content': message.content,
-        'timestamp': message.timestamp
+        'id': str(message['_id']),  # MongoDB uses ObjectId as the ID, so we convert it to string
+        'username': message['username'],
+        'content': message['content'],
+        'timestamp': message['timestamp']
     } for message in messages])
 
 # Endpoint to add a new message via POST
@@ -70,11 +51,12 @@ def post_message():
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         if username and content:
-            # Create a new message instance
-            new_message = Message(username=username, content=content, timestamp=timestamp)
-            # Add to the database
-            db.session.add(new_message)
-            db.session.commit()
+            # Insert the new message into the MongoDB collection
+            mongo.db.messages.insert_one({
+                'username': username,
+                'content': content,
+                'timestamp': timestamp
+            })
             return jsonify({'message': 'Message added successfully'}), 201
         else:
             return jsonify({'error': 'Invalid data'}), 400
@@ -82,7 +64,7 @@ def post_message():
         # Log the error for debugging
         app.logger.error(f"Error posting message: {str(e)}")
         return jsonify({'error': str(e)}), 500
-                
+
 # Endpoint to return the current online visitor count
 @app.route('/visitor_count')
 def visitor_count():
