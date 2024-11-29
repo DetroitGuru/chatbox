@@ -323,33 +323,33 @@
 
     // Handle message form submission
     function handleMessageSubmit(event) {
-        event.preventDefault();  // Prevent page refresh on submit
+    event.preventDefault();  // Prevent page refresh on submit
 
-        const username = document.getElementById('nameInput').value.trim();
-        const content = document.getElementById('messageInput').innerHTML.trim();
+    const username = document.getElementById('nameInput').value.trim();
+    const content = document.getElementById('messageInput').innerText.trim(); // Use innerText here
 
-        if (!username || !content) {
-            alert("Please enter both your name and a message.");
-            return;
-        }
-
-        const messageData = { username, content };
-
-        fetch('/send_message', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(messageData)
-        })
-        .then(response => {
-            if (response.ok) {
-                fetchMessages(); // Refresh messages after sending
-                document.getElementById('messageInput').innerHTML = ''; // Clear input after sending
-            } else {
-                console.error("Failed to send message");
-            }
-        })
-        .catch(error => console.error("Error sending message:", error));
+    if (!username || !content) {
+        alert("Please enter both your name and a message.");
+        return;
     }
+
+    const messageData = { username, content };
+
+    fetch('/send_message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(messageData)
+    })
+    .then(response => {
+        if (response.ok) {
+            fetchMessages(); // Refresh messages after sending
+            document.getElementById('messageInput').innerText = ''; // Clear input after sending
+        } else {
+            console.error("Failed to send message");
+        }
+    })
+    .catch(error => console.error("Error sending message:", error));
+}
 
     // Event listeners for submitting the form and refreshing messages
     document.getElementById('messageForm').addEventListener('submit', handleMessageSubmit);
