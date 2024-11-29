@@ -14,8 +14,11 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'your-default-secret-key')
 # Initialize Flask app
 app = Flask(__name__)
 
-# Configure SQLite database URI (consider using PostgreSQL or another DB in production)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///messages.db'
+# Configure SQLite database URI (use /tmp/messages.db for Vercel deployment)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
+    'DATABASE_URL',  # Use environment variable for production, fall back to /tmp for SQLite
+    'sqlite:////tmp/messages.db'  # Default to /tmp/messages.db for local and Vercel
+)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Disable modification tracking
 app.config['SECRET_KEY'] = SECRET_KEY  # For session management
 
