@@ -364,7 +364,10 @@ function handleMessageSubmit(event) {
     .catch(error => console.error("Error sending message:", error));
 }
     // Event listeners for submitting the form and refreshing messages
+    document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('messageForm').addEventListener('submit', handleMessageSubmit);
+});
+
     document.getElementById('refreshButton').addEventListener('click', function() {
         fetchMessages();
         document.getElementById('refreshIcon').classList.add('spinning');
