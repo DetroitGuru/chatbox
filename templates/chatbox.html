@@ -216,8 +216,9 @@
             </div>
             <form class="message-form" id="messageForm">
                 <div id="messageInput" class="message-input" contenteditable="true" placeholder="Message" aria-label="Enter your message"></div>
-                <button class="send-button" aria-label="Send message">
-  <i class="fas fa-paper-plane"></i></button>
+                <button type="submit" class="send-button" aria-label="Send message">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
             </form>
         </div>
         <div class="visitor-count" style="opacity: 0.75;">
@@ -296,29 +297,38 @@
         }
     }
 
+        // Function to apply text formatting
+    function applyFormatting(command) {
+        const messageInput = document.getElementById('messageInput');
+        if (messageInput) {
+            document.execCommand(command, false, null);
+            messageInput.focus(); // Keep focus on the div to retain the keyboard
+        }
+    }
+
     // Render messages in the chatbox
-function renderMessages(messages) {
-    const messagesContainer = document.getElementById('messages');
-    if (messagesContainer) {
-        messagesContainer.innerHTML = messages
-            .map(msg => {
-                const usernameClass = msg.username === 'MOKMOBI (Dev)' ? 'dev-username' : '';
-                const messageContentClass = msg.username === 'MOKMOBI (Dev)' ? 'dev-message-content' : '';
-                const formattedTimestamp = new Date(msg.timestamp).toLocaleString();
+    function renderMessages(messages) {
+        const messagesContainer = document.getElementById('messages');
+        if (messagesContainer) {
+            messagesContainer.innerHTML = messages
+                .map(msg => {
+                    const usernameClass = msg.username === 'MOKMOBI (Dev)' ? 'dev-username' : '';
+                    const messageContentClass = msg.username === 'MOKMOBI (Dev)' ? 'dev-message-content' : '';
+                    const formattedTimestamp = new Date(msg.timestamp).toLocaleString();
 
                 return `
-                    <div class="message">
-                        <div class="message-header">
-                            <span class="username ${usernameClass}">${msg.username}</span>
-                            <span class="timestamp">${formattedTimestamp}</span>
+                        <div class="message">
+                            <div class="message-header">
+                                <span class="username ${usernameClass}">${msg.username}</span>
+                                <span class="timestamp">${formattedTimestamp}</span>
+                            </div>
+                            <p class="message-content ${messageContentClass}">${msg.content}</p>
                         </div>
-                        <p class="message-content ${messageContentClass}">${msg.content}</p> <!-- Render HTML -->
-                    </div>
-                `;
-            })
-            .join('');
+                    `;
+                })
+                .join('');
+        }
     }
-}
 
     // Handle message form submission
 function handleMessageSubmit(event) {
