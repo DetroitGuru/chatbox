@@ -30,7 +30,7 @@ def index():
     return render_template('chatbox.html')
 
 # Endpoint to get messages from MongoDB in JSON format
-@app.route('/chat.json', methods=['GET'])
+@app.route('/chat_mesg', methods=['GET'])
 def get_messages():
     # Retrieve all messages from the MongoDB collection
     messages = mongo.db.messages.find()  # 'messages' is the collection name in MongoDB
@@ -42,7 +42,7 @@ def get_messages():
     } for message in messages])
 
 # Endpoint to add a new message via POST
-@app.route('/chat.json', methods=['POST'])
+@app.route('/chat_mesg', methods=['POST'])
 def post_message():
     try:
         data = request.get_json()
