@@ -47,62 +47,14 @@ def index():
 # Endpoint to get messages from the database in JSON format
 @app.route('/chat.json', methods=['GET'])
 def get_messages():
+    # Retrieve all messages from the database
     messages = Message.query.all()
-    for message in messages:
-        print(f"Message content: {message.content}")  # Debugging line
+    # Convert messages to a list of dictionaries
     return jsonify([{
         'id': message.id,
         'username': message.username,
         'content': message.content,
         'timestamp': message.timestamp
-    } for message in messages])
-
-# Endpoint to add a new message via POST
-@app.route('/chat.json', methods=['POST'])
-def send_message():
-    try:
-        data = request.get_json()
-        username = data.get('username')
-        content = data.get('content')
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        if username and content:
-            # Save message in the database
-            new_message = Message(username=username, content=content, timestamp=timestamp)
-            db.session.add(new_message)
-            db.session.commit()
-
-            return jsonify({'status': 'success', 'message': 'Message sent successfully'}), 200
-        else:
-            return jsonify({'status': 'error', 'message': 'Invalid data'}), 400
-
-    except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-                
-# Endpoint to return the current online visitor count
-@app.route('/visitor_count')
-def visitor_count():
-    # Return the current count of active users
-    return jsonify({"visitor_count": len(active_users)})
-
-# Handle user joining (for example, by using a session ID)
-@app.before_request
-def track_user():
-    user_id = str(uuid.uuid4())  # Generate a unique session ID for the user
-    if 'user_id' not in session:
-        session['user_id'] = user_id
-        active_users.add(user_id)
-
-# Handle user leaving (cleanup when they disconnect)
-@app.teardown_request
-def cleanup_user(exception=None):
-    user_id = session.get('user_id')
-    if user_id and user_id in active_users:
-        active_users.remove(user_id)
-
-if __name__ == '__main__':
-    # Ensure app runs in debug mode only in development
-    app.run(debug=True)
     } for message in messages])
 
 # Endpoint to add a new message via POST
@@ -127,7 +79,7 @@ def post_message():
         # Log the error for debugging
         app.logger.error(f"Error posting message: {str(e)}")
         return jsonify({'error': str(e)}), 500
-
+                
 # Endpoint to return the current online visitor count
 @app.route('/visitor_count')
 def visitor_count():
