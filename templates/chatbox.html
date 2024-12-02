@@ -54,8 +54,8 @@
             <form class="message-form" id="messageForm">
                 <div id="messageInput" class="message-input" contenteditable="true" placeholder="Message" aria-label="Enter your message"></div>
                 <button class="send-button" type="submit" aria-label="Send message">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
+    <i class="fas fa-paper-plane"></i>
+</button>
             </form>
         </div>
         <div class="visitor-count" style="opacity: 0.75;">
@@ -72,6 +72,7 @@
         </div>
         <div class="chatbox-footer">MOKMOBI Chatbox</div>
     </div>
+
 <script>
     // Fetch the messages from the Flask backend
     function fetchMessages() {
@@ -83,10 +84,7 @@
                 return response.json();
             })
             .then(data => renderMessages(data))
-            .catch(error => {
-                console.error("Error fetching messages:", error);
-                alert("Failed to fetch messages.");
-            });
+            .catch(error => console.error("Error fetching messages:", error));
     }
 
     // Fetch the visitor count from the backend
@@ -104,10 +102,7 @@
                     visitorCountElement.textContent = data.visitor_count;
                 }
             })
-            .catch(error => {
-                console.error("Error fetching visitor count:", error);
-                alert("Failed to fetch visitor count.");
-            });
+            .catch(error => console.error("Error fetching visitor count:", error));
     }
 
     // Update visitor count every 5 seconds
@@ -139,6 +134,15 @@
         }
     }
 
+        // Function to apply text formatting
+    function applyFormatting(command) {
+        const messageInput = document.getElementById('messageInput');
+        if (messageInput) {
+            document.execCommand(command, false, null);
+            messageInput.focus(); // Keep focus on the div to retain the keyboard
+        }
+    }
+
     // Render messages in the chatbox
     function renderMessages(messages) {
         const messagesContainer = document.getElementById('messages');
@@ -149,7 +153,7 @@
                     const messageContentClass = msg.username === 'MOKMOBI (Dev)' ? 'dev-message-content' : '';
                     const formattedTimestamp = new Date(msg.timestamp).toLocaleString();
 
-                    return `
+                return `
                         <div class="message">
                             <div class="message-header">
                                 <span class="username ${usernameClass}">${msg.username}</span>
@@ -164,43 +168,42 @@
     }
 
     // Handle message form submission
-    function handleMessageSubmit(event) {
-        event.preventDefault(); // Prevent page refresh on submit
+function handleMessageSubmit(event) {
+    event.preventDefault(); // Prevent page refresh on submit
+    console.log("Send button clicked");
 
-        const username = document.getElementById('nameInput').value.trim();
-        const content = document.getElementById('messageInput').value.trim(); // Now using textarea input
+    const username = document.getElementById('nameInput').value.trim();
+    const content = document.getElementById('messageInput').innerHTML.trim(); // Getting the content of the editable div
 
-        if (!username || !content) {
-            alert("Please enter both your name and a message.");
-            return;
-        }
+    console.log("Username: ", username);
+    console.log("Message Content: ", content);
 
-        const messageData = { username, content };
-
-        fetch('/messages', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(messageData)
-        })
-        .then(response => {
-            if (response.ok) {
-                fetchMessages(); // Refresh messages after sending
-                document.getElementById('messageInput').value = ''; // Clear input after sending
-            } else {
-                console.error("Failed to send message");
-                alert("Failed to send message.");
-            }
-        })
-        .catch(error => {
-            console.error("Error sending message:", error);
-            alert("Error sending message.");
-        });
+    if (!username || !content) {
+        alert("Please enter both your name and a message.");
+        return;
     }
 
+    const messageData = { username, content };
+
+    fetch('/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(messageData)
+    })
+    .then(response => {
+        if (response.ok) {
+            fetchMessages(); // Refresh messages after sending
+            document.getElementById('messageInput').innerText = ''; // Clear input after sending
+        } else {
+            console.error("Failed to send message");
+        }
+    })
+    .catch(error => console.error("Error sending message:", error));
+}
     // Event listeners for submitting the form and refreshing messages
     document.addEventListener('DOMContentLoaded', function () {
-        document.getElementById('messageForm').addEventListener('submit', handleMessageSubmit);
-    });
+    document.getElementById('messageForm').addEventListener('submit', handleMessageSubmit);
+});
 
     document.getElementById('refreshButton').addEventListener('click', function() {
         fetchMessages();
