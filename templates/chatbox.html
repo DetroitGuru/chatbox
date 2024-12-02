@@ -6,35 +6,255 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.cdnfonts.com/css/thegoodmonolith" rel="stylesheet">
     <title>Chatbox Widget</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: TheGoodMonolith, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #000; padding: 1rem; }
-        .chatbox { width: 100%; max-width: 42rem; background: #000; color: #0f0; border: 2px ridge #0f0; border-radius: 4px; overflow: hidden; }
-        .chatbox-header { padding: 1rem; }
-        .name-input { width: 100%; padding: 0.5rem; background: #000; border: 1px inset #0f0; color: #0f0; border-radius: 0.25rem; margin-bottom: 0.5rem; }
-        .toolbar { display: flex; gap: 0.25rem; margin-bottom: 0.5rem; }
-        .toolbar-button { background: black; border: none; color: #0f0; padding: 0.5rem; cursor: pointer; border-radius: 0.25rem; }
-        .toolbar-button:hover { background: black; color: #4ade80; }
-        .spinning { animation: spin 1s linear infinite; }
-        .message-form { display: flex; gap: 0.5rem; }
-        .message-input { flex: 1; min-height: 60px; padding: 0.5rem; background: #000; border: 1px inset #0f0; color: #0f0; border-radius: 0.25rem; resize: vertical; white-space: pre-wrap; word-wrap: break-word; max-width: 100%; overflow-x: auto; }
-        .send-button { padding: 0.5rem; background-color: black; border: none; color: #0f0; cursor: pointer; }
-        .send-button:hover { background: black; color: #4ade80; }
-        .visitor-count { font-size: .9rem; text-align: center; opacity: 0; line-height: 1.5em; transition: .2s all ease; color: rgba(34, 197, 94, 0.5); }
-        .visitor-count:before { content: ''; display: inline-block; width: .6rem; height: .6rem; border-radius: .3rem; background-color: #0faa0f; margin-right: .2rem; vertical-align: middle; margin-bottom: 2px; box-shadow: 0 0 2px #004701; }
-        .chatbox-content { padding: 1rem; padding-top: 0; max-height: 400px; overflow-y: auto; }
-        .refresh-container { display: flex; justify-content: center; margin-bottom: 1rem; }
-        .messages { display: flex; flex-direction: column; gap: 1rem; max-height: 100%; overflow-y: auto; }
-        .message { display: flex; flex-direction: column; gap: 0.25rem; }
-        .message-header { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }
-        .username { font-weight: bold; }
-        .dev-username { color: red; font-weight: bold; }
-        .timestamp { color: rgba(34, 197, 94, 0.5); font-size: 0.75rem; }
-        .message-content { font-size: 0.875rem; }
-        .dev-message-content { color: red; font-size: 0.875rem; }
-        .chatbox-footer { padding: 1rem; text-align: center; font-size: 0.75rem; color: rgba(34, 197, 94, 0.5); }
-        ::placeholder { color: rgba(34, 197, 94, 0.5); }
-    </style>
+<style>
+    /* === General Reset and Global Styles === */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    /* Body styling */
+    body {
+        font-family: TheGoodMonolith, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: #000;
+        padding: 1rem;
+    }
+
+    /* === Chatbox Styling === */
+    .chatbox {
+        width: 100%;
+        max-width: 42rem;
+        background: #000;
+        color: #0f0;
+        border: 2px ridge #0f0;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    /* Header styling inside chatbox */
+    .chatbox-header {
+        padding: 1rem;
+    }
+
+    /* Input field for name */
+    .name-input {
+        width: 100%;
+        padding: 0.5rem;
+        background: #000;
+        border: 1px inset #0f0;
+        color: #0f0;
+        border-radius: 0.25rem;
+        margin-bottom: 0.5rem;
+    }
+
+    /* === Toolbar Styling === */
+    .toolbar {
+        display: flex;
+        gap: 0.25rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .toolbar-button {
+        background: black;
+        border: none;
+        color: #0f0;
+        padding: 0.5rem;
+        cursor: pointer;
+        border-radius: 0.25rem;
+    }
+
+    .toolbar-button:hover {
+        background: black;
+        color: #4ade80;
+    }
+
+    /* === Spinning Animation === */
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .spinning {
+        animation: spin 1s linear infinite;
+    }
+
+    /* === Message Form Styling ==== */
+    .message-form {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .message-input {
+        flex: 1;
+        min-height: 60px;
+        padding: 0.5rem;
+        background: #000;
+        border: 1px inset #0f0;
+        color: #0f0;
+        border-radius: 0.25rem;
+        resize: vertical;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        max-width: 100%;
+        overflow-x: auto;
+    }
+
+    /* Send button styling */
+    .send-button {
+        padding: 0.5rem;
+        background-color: black;
+        border: none;
+        color: #0f0;
+        cursor: pointer;
+    }
+
+    .send-button:hover {
+        background: black;
+        color: #4ade80;
+    }
+
+    /* === Visitor Count Styling === */
+    .visitor-count {
+        font-size: .9rem;
+        text-align: center;
+        opacity: 0;
+        line-height: 1.5em;
+        transition: .2s all ease;
+        color: rgba(34, 197, 94, 0.5);
+    }
+
+    .visitor-count:before {
+        content: '';
+        display: inline-block;
+        width: .6rem;
+        height: .6rem;
+        border-radius: .3rem;
+        background-color: #0faa0f;
+        margin-right: .2rem;
+        vertical-align: middle;
+        margin-bottom: 2px;
+        box-shadow: 0 0 2px #004701;
+    }
+
+    /* === Chatbox Content Styling === */
+    .chatbox-content {
+        padding: 1rem;
+        padding-top: 0;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .refresh-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+    
+    .messages {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        max-height: 100%;
+        overflow-y: auto;
+    }
+
+    /* === Message Styling === */
+    .message {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .message-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .username {
+        font-weight: bold;
+    }
+    
+    .dev-username {
+        color: red;
+        font-weight: bold;
+    }
+    
+    .timestamp {
+        color: rgba(34, 197, 94, 0.5);
+        font-size: 0.75rem;
+    }
+    
+    .message-content {
+        font-size: 0.875rem;
+    }
+    
+    .dev-message-content {
+        color: red;
+        font-size: 0.875rem;
+    }
+    
+    .chatbox-footer {
+        padding: 1rem;
+        text-align: center;
+        font-size: 0.75rem;
+        color: rgba(34, 197, 94, 0.5);
+    }
+    
+    ::placeholder {
+        color: rgba(34, 197, 94, 0.5);
+    }
+
+    /* === Edit and Delete Button Styles === */    
+    /* Styling for the container of the buttons (Edit/Delete) */
+    .message-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 8px;
+    }
+    /* Edit Button Styling */
+    .message-actions button:first-child {
+        padding: 6px 12px;
+        font-size: 0.875rem;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+    /* Hover effect for Edit button */
+    .message-actions button:first-child:hover {
+        background-color: #45a049;
+    }
+    /* Delete Button Styling */
+    .message-actions button:last-child {
+        padding: 6px 12px;
+        font-size: 0.875rem;
+        background-color: #f44336;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+    /* Hover effect for Delete button */
+    .message-actions button:last-child:hover {
+        background-color: #e53935;
+    }
+    
+    /* Disabled Button Styling (optional) */
+    .message-actions button:disabled {
+        background-color: #757575;
+        cursor: not-allowed;
+    }
+</style>
 </head>
 <body>
     <div class="chatbox">
@@ -72,6 +292,7 @@
         </div>
         <div class="chatbox-footer">MOKMOBI Chatbox</div>
     </div>
+
 <script>
     // Fetch the messages from the Flask backend
     function fetchMessages() {
