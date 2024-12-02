@@ -75,37 +75,6 @@ def post_message():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
         
- #Endpoint for retrieving specific user messages:
-@app.route('/messages/<int:id>', methods=['GET'])
-def get_message(id):
-    message = Message.query.get(id)
-    if message:
-        return jsonify({
-            'id': message.id,
-            'username': message.username,
-            'content': message.content,
-            'timestamp': message.timestamp
-        })
-    else:
-        return jsonify({'error': 'Message not found'}), 404
-        
-#Endpoint for updating specific user messages
-@app.route('/messages/<int:id>', methods=['PUT'])
-def edit_message(id):
-    try:
-        data = request.get_json()
-        content = data.get('content')
-        message = Message.query.get(id)
-
-        if message and message.user_id == session.get('user_id'):  # Ensure the user owns the message
-            message.content = content
-            db.session.commit()
-            return jsonify({"message": "Message updated successfully"}), 200
-        else:
-            return jsonify({"error": "Message not found or you don't have permission to edit this message"}), 403
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-        
 #Endpoint to edit a specific user messages
 @app.route('/messages/<int:id>', methods=['PUT'])
 def edit_message(id):
