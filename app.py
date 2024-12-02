@@ -28,6 +28,7 @@ class Message(db.Model):
     username = db.Column(db.String(100), nullable=False)
     content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.String(20), nullable=False)
+    user_id = db.Column(db.String(36), nullable=False)
 
     def __repr__(self):
         return f"<Message {self.username}: {self.content}>"
@@ -45,9 +46,8 @@ def index():
     return render_template('chatbox.html')
 
 # Endpoint to get messages from the database in JSON format
-@app.route('/chat.json', methods=['GET'])
+@app.route('/messages', methods=['GET'])
 def get_messages():
-    # Retrieve all messages from the database
     messages = Message.query.all()
     return jsonify([{
         'id': message.id,
@@ -57,7 +57,7 @@ def get_messages():
     } for message in messages])
 
 # Endpoint to add a new message via POST
-@app.route('/chat.json', methods=['POST'])
+@app.route('/messages', methods=['POST'])
 def post_message():
     try:
         data = request.get_json()
@@ -66,15 +66,77 @@ def post_message():
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         if username and content:
-            new_message = Message(username=username, content=content, timestamp=timestamp)
+            new_message = Message(username=username, content=content, timestamp=timestamp, user_id=session.get('user_id'))
             db.session.add(new_message)
             db.session.commit()
             return jsonify({'message': 'Message added successfully'}), 201
         else:
             return jsonify({'error': 'Invalid data'}), 400
     except Exception as e:
-        app.logger.error(f"Error posting message: {str(e)}")
         return jsonify({'error': str(e)}), 500
+        
+ #Endpoint for retrieving specific user messages:
+@app.route('/messages/<int:id>', methods=['GET'])
+def get_message(id):
+    message = Message.query.get(id)
+    if message:
+        return jsonify({
+            'id': message.id,
+            'username': message.username,
+            'content': message.content,
+            'timestamp': message.timestamp
+        })
+    else:
+        return jsonify({'error': 'Message not found'}), 404
+        
+#Endpoint for updating specific user messages
+@app.route('/messages/<int:id>', methods=['PUT'])
+def edit_message(id):
+    try:
+        data = request.get_json()
+        content = data.get('content')
+        message = Message.query.get(id)
+
+        if message and message.user_id == session.get('user_id'):  # Ensure the user owns the message
+            message.content = content
+            db.session.commit()
+            return jsonify({"message": "Message updated successfully"}), 200
+        else:
+            return jsonify({"error": "Message not found or you don't have permission to edit this message"}), 403
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+        
+#Endpoint to edit a specific user messages
+@app.route('/messages/<int:id>', methods=['PUT'])
+def edit_message(id):
+    try:
+        data = request.get_json()
+        content = data.get('content')
+        message = Message.query.get(id)
+
+        if message and message.user_id == session.get('user_id'):  # Ensure the user owns the message
+            message.content = content
+            db.session.commit()
+            return jsonify({"message": "Message updated successfully"}), 200
+        else:
+            return jsonify({"error": "Message not found or you don't have permission to edit this message"}), 403
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+        
+#Endpoint to delete a specific user messages
+@app.route('/messages/<int:id>', methods=['DELETE'])
+def delete_message(id):
+    try:
+        message = Message.query.get(id)
+
+        if message and message.user_id == session.get('user_id'):  # Ensure the user owns the message
+            db.session.delete(message)
+            db.session.commit()
+            return jsonify({"message": "Message deleted successfully"}), 200
+        else:
+            return jsonify({"error": "Message not found or you don't have permission to delete this message"}), 403
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # Endpoint to return the current online visitor count
 @app.route('/visitor_count')
