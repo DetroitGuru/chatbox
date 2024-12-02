@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, render_template, session, abort
-from flask_pymongo import PyMongo
+from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 from datetime import datetime
 import uuid
@@ -8,18 +8,33 @@ import os
 # Load environment variables
 load_dotenv()
 
-# Load secret key from environment variable (for better security)
+# Load secret key from environment variable
 SECRET_KEY = os.getenv('SECRET_KEY', 'your-default-secret-key')
 
 # Initialize Flask app
 app = Flask(__name__)
 
-# Configure MongoDB URI (use environment variable for production, default to localhost for local dev)
-app.config['MONGO_URI'] = os.getenv('MONGO_URI', 'mongodb://localhost:27017/chatbox')  # Replace with your MongoDB URI
+# Configure PostgreSQL database URI (use environment variable)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://username:password@localhost/your_database_name')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Disable modification tracking
 app.config['SECRET_KEY'] = SECRET_KEY  # For session management
 
-# Initialize PyMongo
-mongo = PyMongo(app)
+# Initialize SQLAlchemy
+db = SQLAlchemy(app)
+
+# Define Message model
+class Message(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.String(20), nullable=False)
+
+    def __repr__(self):
+        return f"<Message {self.username}: {self.content}>"
+
+# Create the database tables if they don't exist
+with app.app_context():
+    db.create_all()  # For PostgreSQL, creates the tables in the specified database
 
 # Global variable to keep track of active users
 active_users = set()
@@ -29,25 +44,20 @@ active_users = set()
 def index():
     return render_template('chatbox.html')
 
-# Endpoint to get messages from MongoDB in JSON format
-@app.route('/chat_mesg', methods=['GET'])
+# Endpoint to get messages from the database in JSON format
+@app.route('/chat.json', methods=['GET'])
 def get_messages():
-    try:
-        messages = mongo.db.messages.find()  # 'messages' is the collection name in MongoDB
-        if not messages:
-            app.logger.warning("No messages found in the 'messages' collection.")
-        return jsonify([{
-            'id': str(message['_id']),
-            'username': message['username'],
-            'content': message['content'],
-            'timestamp': message['timestamp']
-        } for message in messages])
-    except Exception as e:
-        app.logger.error(f"Error retrieving messages: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+    # Retrieve all messages from the database
+    messages = Message.query.all()
+    return jsonify([{
+        'id': message.id,
+        'username': message.username,
+        'content': message.content,
+        'timestamp': message.timestamp
+    } for message in messages])
 
 # Endpoint to add a new message via POST
-@app.route('/chat_mesg', methods=['POST'])
+@app.route('/chat.json', methods=['POST'])
 def post_message():
     try:
         data = request.get_json()
@@ -56,24 +66,19 @@ def post_message():
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         if username and content:
-            # Insert the new message into the MongoDB collection
-            mongo.db.messages.insert_one({
-                'username': username,
-                'content': content,
-                'timestamp': timestamp
-            })
+            new_message = Message(username=username, content=content, timestamp=timestamp)
+            db.session.add(new_message)
+            db.session.commit()
             return jsonify({'message': 'Message added successfully'}), 201
         else:
             return jsonify({'error': 'Invalid data'}), 400
     except Exception as e:
-        # Log the error for debugging
         app.logger.error(f"Error posting message: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 # Endpoint to return the current online visitor count
 @app.route('/visitor_count')
 def visitor_count():
-    # Return the current count of active users
     return jsonify({"visitor_count": len(active_users)})
 
 # Handle user joining (for example, by using a session ID)
@@ -92,5 +97,4 @@ def cleanup_user(exception=None):
         active_users.remove(user_id)
 
 if __name__ == '__main__':
-    # Ensure app runs in debug mode only in development
     app.run(debug=True)
