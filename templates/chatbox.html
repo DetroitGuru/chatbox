@@ -349,33 +349,53 @@
     }
 
     // Render messages in the chatbox
-    function renderMessages(messages) {
-        const messagesContainer = document.getElementById('messages');
-        if (messagesContainer) {
-            messagesContainer.innerHTML = messages
-                .map(msg => {
-                    const usernameClass = msg.username === 'MOKMOBI (Dev)' ? 'dev-username' : '';
-                    const messageContentClass = msg.username === 'MOKMOBI (Dev)' ? 'dev-message-content' : '';
-                    const formattedTimestamp = new Date(msg.timestamp).toLocaleString();
-                    const isCurrentUserMessage = msg.user_id === sessionStorage.getItem('user_id');  // Compare with current user's user_id
-                    
-                    return `
-                        <div class="message" id="message-${msg.id}">
-                            <div class="message-header">
-                                <span class="username ${usernameClass}">${msg.username}</span>
-                                <span class="timestamp">${formattedTimestamp}</span>
-                            </div>
-                            <p class="message-content ${messageContentClass}">${msg.content}</p>
-                            ${isCurrentUserMessage ? `
-                                <button onclick="editMessage(${msg.id})">Edit</button>
-                                <button onclick="deleteMessage(${msg.id})">Delete</button>
-                            ` : ''}
+function renderMessages(messages) {
+    const messagesContainer = document.getElementById('messages');
+    if (messagesContainer) {
+        messagesContainer.innerHTML = messages
+            .map(msg => {
+                const usernameClass = msg.username === 'MOKMOBI (Dev)' ? 'dev-username' : '';
+                const messageContentClass = msg.username === 'MOKMOBI (Dev)' ? 'dev-message-content' : '';
+                const formattedTimestamp = new Date(msg.timestamp).toLocaleString();
+                const isCurrentUserMessage = msg.user_id === sessionStorage.getItem('user_id');  // Compare with current user's user_id
+                
+                return `
+                    <div class="message" id="message-${msg.id}">
+                        <div class="message-header">
+                            <span class="username ${usernameClass}">${msg.username}</span>
+                            <span class="timestamp">${formattedTimestamp}</span>
                         </div>
-                    `;
-                })
-                .join('');
-        }
+                        <p class="message-content ${messageContentClass}">${msg.content}</p>
+                        ${isCurrentUserMessage ? `
+                        <div class="message-actions">
+                <button class="edit-btn" data-id="${msg.id}">Edit</button>
+                <button class="delete-btn" data-id="${msg.id}">Delete</button>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            })
+            .join('');
+
+        // Add event listeners after rendering the messages
+        const editButtons = document.querySelectorAll('.edit-btn');
+        const deleteButtons = document.querySelectorAll('.delete-btn');
+
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const messageId = this.dataset.id;
+                editMessage(messageId);
+            });
+        });
+
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const messageId = this.dataset.id;
+                deleteMessage(messageId);
+            });
+        });
     }
+}
     
     // Edit message function
     function editMessage(messageId) {
