@@ -1,9 +1,10 @@
-from flask import Flask, request, jsonify, render_template, session, abort
+from flask import Flask, request, jsonify, render_template, session
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 from datetime import datetime
 import uuid
 import os
+import re
 
 # Load environment variables
 load_dotenv()
@@ -42,6 +43,23 @@ with app.app_context():
 # Global variable to keep track of active users (session-based)
 active_users = set()
 
+# Load profane words from the file
+def load_bad_words():
+    with open('bad_words.txt', 'r') as file:
+        # Return a set of bad words (to optimize search performance)
+        return set(line.strip().lower() for line in file.readlines())
+
+BAD_WORDS = load_bad_words()  # Load the bad words when the app starts
+
+# Function to check if the content contains profanity
+def contains_profanity(text):
+    # Normalize text (lowercase and remove non-alphanumeric characters)
+    text = re.sub(r'\W+', ' ', text.lower())
+    for bad_word in BAD_WORDS:
+        if bad_word in text:
+            return True
+    return False
+
 # Endpoint to render the HTML page
 @app.route('/')
 def index():
@@ -77,6 +95,10 @@ def post_message():
         if not user_id:
             return jsonify({'error': 'User session expired or not found'}), 400
 
+        # Check if the content contains profanity
+        if contains_profanity(content):
+            return jsonify({'error': 'Message contains inappropriate language'}), 400
+
         new_message = Message(username=username, content=content, timestamp=timestamp, user_id=user_id)
         db.session.add(new_message)
         db.session.commit()
@@ -107,6 +129,9 @@ def edit_message(id):
         message = Message.query.get(id)
 
         if message and message.user_id == session.get('user_id'):  # Ensure the user owns the message
+            # Check if the new content contains profanity
+            if contains_profanity(content):
+                return jsonify({'error': 'Message contains inappropriate language'}), 400
             message.content = content
             db.session.commit()
             return jsonify({"message": "Message updated successfully"}), 200
