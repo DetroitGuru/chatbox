@@ -72,7 +72,6 @@
         </div>
         <div class="chatbox-footer">MOKMOBI Chatbox</div>
     </div>
-
 <script>
     // Fetch the messages from the Flask backend
     function fetchMessages() {
@@ -134,15 +133,6 @@
         }
     }
 
-        // Function to apply text formatting
-    function applyFormatting(command) {
-        const messageInput = document.getElementById('messageInput');
-        if (messageInput) {
-            document.execCommand(command, false, null);
-            messageInput.focus(); // Keep focus on the div to retain the keyboard
-        }
-    }
-
     // Render messages in the chatbox
     function renderMessages(messages) {
         const messagesContainer = document.getElementById('messages');
@@ -152,14 +142,19 @@
                     const usernameClass = msg.username === 'MOKMOBI (Dev)' ? 'dev-username' : '';
                     const messageContentClass = msg.username === 'MOKMOBI (Dev)' ? 'dev-message-content' : '';
                     const formattedTimestamp = new Date(msg.timestamp).toLocaleString();
-
-                return `
-                        <div class="message">
+                    const isCurrentUserMessage = msg.user_id === sessionStorage.getItem('user_id');  // Compare with current user's user_id
+                    
+                    return `
+                        <div class="message" id="message-${msg.id}">
                             <div class="message-header">
                                 <span class="username ${usernameClass}">${msg.username}</span>
                                 <span class="timestamp">${formattedTimestamp}</span>
                             </div>
                             <p class="message-content ${messageContentClass}">${msg.content}</p>
+                            ${isCurrentUserMessage ? `
+                                <button onclick="editMessage(${msg.id})">Edit</button>
+                                <button onclick="deleteMessage(${msg.id})">Delete</button>
+                            ` : ''}
                         </div>
                     `;
                 })
@@ -167,43 +162,88 @@
         }
     }
 
-    // Handle message form submission
-function handleMessageSubmit(event) {
-    event.preventDefault(); // Prevent page refresh on submit
-    console.log("Send button clicked");
+    // Edit message function
+    function editMessage(messageId) {
+        const newContent = prompt("Edit your message:");
 
-    const username = document.getElementById('nameInput').value.trim();
-    const content = document.getElementById('messageInput').innerHTML.trim(); // Getting the content of the editable div
-
-    console.log("Username: ", username);
-    console.log("Message Content: ", content);
-
-    if (!username || !content) {
-        alert("Please enter both your name and a message.");
-        return;
+        if (newContent) {
+            fetch(`/messages/${messageId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ content: newContent })
+            })
+            .then(response => {
+                if (response.ok) {
+                    fetchMessages(); // Refresh messages after editing
+                } else {
+                    alert("Failed to edit message.");
+                }
+            })
+            .catch(error => {
+                console.error("Error editing message:", error);
+                alert("Error editing message.");
+            });
+        }
     }
 
-    const messageData = { username, content };
-
-    fetch('/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(messageData)
-    })
-    .then(response => {
-        if (response.ok) {
-            fetchMessages(); // Refresh messages after sending
-            document.getElementById('messageInput').innerText = ''; // Clear input after sending
-        } else {
-            console.error("Failed to send message");
+    // Delete message function
+    function deleteMessage(messageId) {
+        const confirmDelete = confirm("Are you sure you want to delete this message?");
+        
+        if (confirmDelete) {
+            fetch(`/messages/${messageId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    fetchMessages(); // Refresh messages after deletion
+                } else {
+                    alert("Failed to delete message.");
+                }
+            })
+            .catch(error => {
+                console.error("Error deleting message:", error);
+                alert("Error deleting message.");
+            });
         }
-    })
-    .catch(error => console.error("Error sending message:", error));
-}
+    }
+
+    // Handle message form submission
+    function handleMessageSubmit(event) {
+        event.preventDefault(); // Prevent page refresh on submit
+
+        const username = document.getElementById('nameInput').value.trim();
+        const content = document.getElementById('messageInput').innerHTML.trim(); // Getting the content of the editable div
+
+        if (!username || !content) {
+            alert("Please enter both your name and a message.");
+            return;
+        }
+
+        const messageData = { username, content };
+
+        fetch('/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(messageData)
+        })
+        .then(response => {
+            if (response.ok) {
+                fetchMessages(); // Refresh messages after sending
+                document.getElementById('messageInput').innerText = ''; // Clear input after sending
+            } else {
+                console.error("Failed to send message");
+            }
+        })
+        .catch(error => console.error("Error sending message:", error));
+    }
+
     // Event listeners for submitting the form and refreshing messages
     document.addEventListener('DOMContentLoaded', function () {
-    document.getElementById('messageForm').addEventListener('submit', handleMessageSubmit);
-});
+        document.getElementById('messageForm').addEventListener('submit', handleMessageSubmit);
+    });
 
     document.getElementById('refreshButton').addEventListener('click', function() {
         fetchMessages();
