@@ -294,6 +294,13 @@
     </div>
 
 <script>
+    // Function to sanitize the message content by removing dangerous HTML
+    function sanitizeMessage(content) {
+        const tempDiv = document.createElement('div');
+        tempDiv.textContent = content;  // This converts any HTML tags into plain text
+        return tempDiv.innerHTML;       // Return the sanitized text content
+    }
+
     // Fetch the messages from the Flask backend
     function fetchMessages() {
         fetch('/messages')
@@ -443,7 +450,10 @@
             return;
         }
 
-        const messageData = { username, content };
+        // Sanitize the content before sending
+        const sanitizedContent = sanitizeMessage(content);
+
+        const messageData = { username, content: sanitizedContent };
 
         fetch('/messages', {
             method: 'POST',
