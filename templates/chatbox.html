@@ -395,43 +395,43 @@
     }
 
     // Function to handle long press (both mouse and touch events)
-    function handleLongPress(message) {
+    function handleLongPress(messageElement) {
         let pressTimer;
 
-        // Mouse events
-        message.addEventListener('mousedown', function () {
+        // Mouse events for desktop
+        messageElement.addEventListener('mousedown', function () {
             pressTimer = setTimeout(() => {
-                const messageActions = message.querySelector('.message-actions');
+                const messageActions = messageElement.querySelector('.message-actions');
                 if (messageActions) {
                     messageActions.style.display = 'flex'; // Show the buttons
                 }
-            }, 1000); // Long press duration (1 second)
+            }, 1000); // 1 second long press
         });
 
-        message.addEventListener('mouseup', function () {
-            clearTimeout(pressTimer); // Clear the timer if mouse is released
+        messageElement.addEventListener('mouseup', function () {
+            clearTimeout(pressTimer); // Cancel long press if the mouse is released
         });
 
-        message.addEventListener('mouseleave', function () {
-            clearTimeout(pressTimer); // Clear the timer if mouse leaves the message
+        messageElement.addEventListener('mouseleave', function () {
+            clearTimeout(pressTimer); // Cancel long press if the mouse leaves the message
         });
 
-        // Touch events (for mobile devices)
-        message.addEventListener('touchstart', function () {
+        // Touch events for mobile
+        messageElement.addEventListener('touchstart', function () {
             pressTimer = setTimeout(() => {
-                const messageActions = message.querySelector('.message-actions');
+                const messageActions = messageElement.querySelector('.message-actions');
                 if (messageActions) {
                     messageActions.style.display = 'flex'; // Show the buttons
                 }
-            }, 1000); // Long press duration (1 second)
+            }, 1000); // 1 second long press
         });
 
-        message.addEventListener('touchend', function () {
-            clearTimeout(pressTimer); // Clear the timer if touch is released
+        messageElement.addEventListener('touchend', function () {
+            clearTimeout(pressTimer); // Cancel long press if the touch is released
         });
 
-        message.addEventListener('touchcancel', function () {
-            clearTimeout(pressTimer); // Clear the timer if touch is canceled
+        messageElement.addEventListener('touchcancel', function () {
+            clearTimeout(pressTimer); // Cancel long press if the touch is canceled
         });
     }
 
