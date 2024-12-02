@@ -198,13 +198,14 @@
             color: rgba(34, 197, 94, 0.5);
         }
 /* === Message Actions Container === */
+/* Initially hide the message actions */
 .message-actions {
-    display: flex;
+    display: none;
     gap: 10px;
     margin-top: 8px;
 }
 
-/* === Edit Button Styling === */
+/* Edit Button Styling */
 .message-actions .edit-btn {
     padding: 6px 12px;
     font-size: 0.875rem;
@@ -220,7 +221,7 @@
     background-color: #45a049;
 }
 
-/* === Delete Button Styling === */
+/* Delete Button Styling */
 .message-actions .delete-btn {
     padding: 6px 12px;
     font-size: 0.875rem;
@@ -279,7 +280,6 @@
         </div>
         <div class="chatbox-footer">MOKMOBI Chatbox</div>
     </div>
-
 <script>
     // Fetch the messages from the Flask backend
     function fetchMessages() {
@@ -341,64 +341,100 @@
         }
     }
 
-        // Function to apply text formatting
-    function applyFormatting(command) {
-        const messageInput = document.getElementById('messageInput');
-        if (messageInput) {
-            document.execCommand(command, false, null);
-            messageInput.focus(); // Keep focus on the div to retain the keyboard
+    // Render messages in the chatbox
+    function renderMessages(messages) {
+        const messagesContainer = document.getElementById('messages');
+        if (messagesContainer) {
+            messagesContainer.innerHTML = messages
+                .map(msg => {
+                    const usernameClass = msg.username === 'MOKMOBI (Dev)' ? 'dev-username' : '';
+                    const messageContentClass = msg.username === 'MOKMOBI (Dev)' ? 'dev-message-content' : '';
+                    const formattedTimestamp = new Date(msg.timestamp).toLocaleString();
+                    const isCurrentUserMessage = msg.user_id === sessionStorage.getItem('user_id');  // Compare with current user's user_id
+
+                    return `
+                        <div class="message" id="message-${msg.id}">
+                            <div class="message-header">
+                                <span class="username ${usernameClass}">${msg.username}</span>
+                                <span class="timestamp">${formattedTimestamp}</span>
+                            </div>
+                            <p class="message-content ${messageContentClass}">${msg.content}</p>
+                            ${isCurrentUserMessage ? `
+                            <div class="message-actions" style="display: none;">
+                                <button class="edit-btn" data-id="${msg.id}">Edit</button>
+                                <button class="delete-btn" data-id="${msg.id}">Delete</button>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                })
+                .join('');
+
+            // Add event listeners for long press (mouse and touch events)
+            const messageElements = document.querySelectorAll('.message');
+            messageElements.forEach(handleLongPress);
+
+            // Add event listeners after rendering the messages
+            const editButtons = document.querySelectorAll('.edit-btn');
+            const deleteButtons = document.querySelectorAll('.delete-btn');
+
+            editButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const messageId = this.dataset.id;
+                    editMessage(messageId);
+                });
+            });
+
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const messageId = this.dataset.id;
+                    deleteMessage(messageId);
+                });
+            });
         }
     }
 
-    // Render messages in the chatbox
-function renderMessages(messages) {
-    const messagesContainer = document.getElementById('messages');
-    if (messagesContainer) {
-        messagesContainer.innerHTML = messages
-            .map(msg => {
-                const usernameClass = msg.username === 'MOKMOBI (Dev)' ? 'dev-username' : '';
-                const messageContentClass = msg.username === 'MOKMOBI (Dev)' ? 'dev-message-content' : '';
-                const formattedTimestamp = new Date(msg.timestamp).toLocaleString();
-                const isCurrentUserMessage = msg.user_id === sessionStorage.getItem('user_id');  // Compare with current user's user_id
-                
-                return `
-                    <div class="message" id="message-${msg.id}">
-                        <div class="message-header">
-                            <span class="username ${usernameClass}">${msg.username}</span>
-                            <span class="timestamp">${formattedTimestamp}</span>
-                        </div>
-                        <p class="message-content ${messageContentClass}">${msg.content}</p>
-                        ${isCurrentUserMessage ? `
-                        <div class="message-actions">
-                <button class="edit-btn" data-id="${msg.id}">Edit</button>
-                <button class="delete-btn" data-id="${msg.id}">Delete</button>
-                        </div>
-                        ` : ''}
-                    </div>
-                `;
-            })
-            .join('');
+    // Function to handle long press (both mouse and touch events)
+    function handleLongPress(message) {
+        let pressTimer;
 
-        // Add event listeners after rendering the messages
-        const editButtons = document.querySelectorAll('.edit-btn');
-        const deleteButtons = document.querySelectorAll('.delete-btn');
-
-        editButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const messageId = this.dataset.id;
-                editMessage(messageId);
-            });
+        // Mouse events
+        message.addEventListener('mousedown', function () {
+            pressTimer = setTimeout(() => {
+                const messageActions = message.querySelector('.message-actions');
+                if (messageActions) {
+                    messageActions.style.display = 'flex'; // Show the buttons
+                }
+            }, 1000); // Long press duration (1 second)
         });
 
-        deleteButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const messageId = this.dataset.id;
-                deleteMessage(messageId);
-            });
+        message.addEventListener('mouseup', function () {
+            clearTimeout(pressTimer); // Clear the timer if mouse is released
+        });
+
+        message.addEventListener('mouseleave', function () {
+            clearTimeout(pressTimer); // Clear the timer if mouse leaves the message
+        });
+
+        // Touch events (for mobile devices)
+        message.addEventListener('touchstart', function () {
+            pressTimer = setTimeout(() => {
+                const messageActions = message.querySelector('.message-actions');
+                if (messageActions) {
+                    messageActions.style.display = 'flex'; // Show the buttons
+                }
+            }, 1000); // Long press duration (1 second)
+        });
+
+        message.addEventListener('touchend', function () {
+            clearTimeout(pressTimer); // Clear the timer if touch is released
+        });
+
+        message.addEventListener('touchcancel', function () {
+            clearTimeout(pressTimer); // Clear the timer if touch is canceled
         });
     }
-}
-    
+
     // Edit message function
     function editMessage(messageId) {
         const newContent = prompt("Edit your message:");
@@ -448,42 +484,43 @@ function renderMessages(messages) {
     }
 
     // Handle message form submission
-function handleMessageSubmit(event) {
-    event.preventDefault(); // Prevent page refresh on submit
-    console.log("Send button clicked");
+    function handleMessageSubmit(event) {
+        event.preventDefault(); // Prevent page refresh on submit
+        console.log("Send button clicked");
 
-    const username = document.getElementById('nameInput').value.trim();
-    const content = document.getElementById('messageInput').innerHTML.trim(); // Getting the content of the editable div
+        const username = document.getElementById('nameInput').value.trim();
+        const content = document.getElementById('messageInput').innerHTML.trim(); // Getting the content of the editable div
 
-    console.log("Username: ", username);
-    console.log("Message Content: ", content);
+        console.log("Username: ", username);
+        console.log("Message Content: ", content);
 
-    if (!username || !content) {
-        alert("Please enter both your name and a message.");
-        return;
+        if (!username || !content) {
+            alert("Please enter both your name and a message.");
+            return;
+        }
+
+        const messageData = { username, content };
+
+        fetch('/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(messageData)
+        })
+        .then(response => {
+            if (response.ok) {
+                fetchMessages(); // Refresh messages after sending
+                document.getElementById('messageInput').innerText = ''; // Clear input after sending
+            } else {
+                console.error("Failed to send message");
+            }
+        })
+        .catch(error => console.error("Error sending message:", error));
     }
 
-    const messageData = { username, content };
-
-    fetch('/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(messageData)
-    })
-    .then(response => {
-        if (response.ok) {
-            fetchMessages(); // Refresh messages after sending
-            document.getElementById('messageInput').innerText = ''; // Clear input after sending
-        } else {
-            console.error("Failed to send message");
-        }
-    })
-    .catch(error => console.error("Error sending message:", error));
-}
     // Event listeners for submitting the form and refreshing messages
     document.addEventListener('DOMContentLoaded', function () {
-    document.getElementById('messageForm').addEventListener('submit', handleMessageSubmit);
-});
+        document.getElementById('messageForm').addEventListener('submit', handleMessageSubmit);
+    });
 
     document.getElementById('refreshButton').addEventListener('click', function() {
         fetchMessages();
