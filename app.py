@@ -51,14 +51,14 @@ def load_bad_words():
 
 BAD_WORDS = load_bad_words()  # Load the bad words when the app starts
 
-# Function to check if the content contains profanity
-def contains_profanity(text):
+# Function to replace profanity in the text with asterisks
+def replace_profanity(text):
     # Normalize text (lowercase and remove non-alphanumeric characters)
-    text = re.sub(r'\W+', ' ', text.lower())
+    text = text.lower()
     for bad_word in BAD_WORDS:
-        if bad_word in text:
-            return True
-    return False
+        # Replace each bad word with the equivalent number of asterisks
+        text = re.sub(r'\b' + re.escape(bad_word) + r'\b', '*' * len(bad_word), text)
+    return text
 
 # Endpoint to render the HTML page
 @app.route('/')
@@ -95,11 +95,10 @@ def post_message():
         if not user_id:
             return jsonify({'error': 'User session expired or not found'}), 400
 
-        # Check if the content contains profanity
-        if contains_profanity(content):
-            return jsonify({'error': 'Message contains inappropriate language'}), 400
+        # Replace profanity in the content with asterisks
+        sanitized_content = replace_profanity(content)
 
-        new_message = Message(username=username, content=content, timestamp=timestamp, user_id=user_id)
+        new_message = Message(username=username, content=sanitized_content, timestamp=timestamp, user_id=user_id)
         db.session.add(new_message)
         db.session.commit()
         return jsonify({'message': 'Message added successfully'}), 201
@@ -129,10 +128,9 @@ def edit_message(id):
         message = Message.query.get(id)
 
         if message and message.user_id == session.get('user_id'):  # Ensure the user owns the message
-            # Check if the new content contains profanity
-            if contains_profanity(content):
-                return jsonify({'error': 'Message contains inappropriate language'}), 400
-            message.content = content
+            # Replace profanity in the new content with asterisks
+            sanitized_content = replace_profanity(content)
+            message.content = sanitized_content
             db.session.commit()
             return jsonify({"message": "Message updated successfully"}), 200
         else:
