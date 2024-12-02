@@ -72,99 +72,136 @@
         </div>
         <div class="chatbox-footer">MOKMOBI Chatbox</div>
     </div>
-
 <script>
-// Fetch the messages from the Flask backend
-function fetchMessages() {
-    fetch('/messages')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to fetch messages');
-            }
-            return response.json();
-        })
-        .then(data => renderMessages(data))
-        .catch(error => console.error("Error fetching messages:", error));
-}
-
-// Fetch the visitor count from the backend
-function fetchVisitorCount() {
-    fetch('/visitor_count')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to fetch visitor count');
-            }
-            return response.json();
-        })
-        .then(data => {
-            const visitorCountElement = document.getElementById('visitorcount');
-            if (visitorCountElement) {
-                visitorCountElement.textContent = data.visitor_count;
-            }
-        })
-        .catch(error => console.error("Error fetching visitor count:", error));
-}
-
-// Update visitor count every 5 seconds
-setInterval(fetchVisitorCount, 5000);
-
-// Render messages in the chatbox
-function renderMessages(messages) {
-    const messagesContainer = document.getElementById('messages');
-    if (messagesContainer) {
-        messagesContainer.innerHTML = messages
-            .map(msg => {
-                const usernameClass = msg.username === 'MOKMOBI (Dev)' ? 'dev-username' : '';
-                const messageContentClass = msg.username === 'MOKMOBI (Dev)' ? 'dev-message-content' : '';
-                const formattedTimestamp = new Date(msg.timestamp).toLocaleString();
-
-                return `
-                    <div class="message">
-                        <div class="message-header">
-                            <span class="username ${usernameClass}">${msg.username}</span>
-                            <span class="timestamp">${formattedTimestamp}</span>
-                        </div>
-                        <p class="message-content ${messageContentClass}">${msg.content}</p>
-                    </div>
-                `;
+    // Fetch the messages from the Flask backend
+    function fetchMessages() {
+        fetch('/messages')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch messages');
+                }
+                return response.json();
             })
-            .join('');
-    }
-}
-
-// Handle message form submission
-function handleMessageSubmit(event) {
-    event.preventDefault(); // Prevent page refresh on submit
-
-    const username = document.getElementById('nameInput').value.trim();
-    const content = document.getElementById('messageInput').innerHTML.trim();
-
-    if (!username || !content) {
-        alert("Please enter both your name and a message.");
-        return;
+            .then(data => renderMessages(data))
+            .catch(error => {
+                console.error("Error fetching messages:", error);
+                alert("Failed to fetch messages.");
+            });
     }
 
-    const messageData = { username, content };
+    // Fetch the visitor count from the backend
+    function fetchVisitorCount() {
+        fetch('/visitor_count')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch visitor count');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const visitorCountElement = document.getElementById('visitorcount');
+                if (visitorCountElement) {
+                    visitorCountElement.textContent = data.visitor_count;
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching visitor count:", error);
+                alert("Failed to fetch visitor count.");
+            });
+    }
 
-    fetch('/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(messageData)
-    })
-    .then(response => {
-        if (response.ok) {
-            fetchMessages(); // Refresh messages after sending
-            document.getElementById('messageInput').innerText = ''; // Clear input after sending
-        } else {
-            console.error("Failed to send message");
+    // Update visitor count every 5 seconds
+    setInterval(fetchVisitorCount, 5000);
+
+    // Add event listeners for buttons to apply formatting
+    function addFormattingListeners() {
+        const boldButton = document.getElementById('boldButton');
+        const italicButton = document.getElementById('italicButton');
+        const strikethroughButton = document.getElementById('strikethroughButton');
+
+        if (boldButton) {
+            boldButton.addEventListener('click', function() { applyFormatting('bold'); });
         }
-    })
-    .catch(error => console.error("Error sending message:", error));
-}
+        if (italicButton) {
+            italicButton.addEventListener('click', function() { applyFormatting('italic'); });
+        }
+        if (strikethroughButton) {
+            strikethroughButton.addEventListener('click', function() { applyFormatting('strikeThrough'); });
+        }
+    }
 
-// Event listeners for submitting the form and refreshing messages
-document.addEventListener('DOMContentLoaded', function () {
-    document.getElementById('messageForm').addEventListener('submit', handleMessageSubmit);
+    // Function to apply text formatting
+    function applyFormatting(command) {
+        const messageInput = document.getElementById('messageInput');
+        if (messageInput) {
+            document.execCommand(command, false, null);
+            messageInput.focus(); // Keep focus on the div to retain the keyboard
+        }
+    }
+
+    // Render messages in the chatbox
+    function renderMessages(messages) {
+        const messagesContainer = document.getElementById('messages');
+        if (messagesContainer) {
+            messagesContainer.innerHTML = messages
+                .map(msg => {
+                    const usernameClass = msg.username === 'MOKMOBI (Dev)' ? 'dev-username' : '';
+                    const messageContentClass = msg.username === 'MOKMOBI (Dev)' ? 'dev-message-content' : '';
+                    const formattedTimestamp = new Date(msg.timestamp).toLocaleString();
+
+                    return `
+                        <div class="message">
+                            <div class="message-header">
+                                <span class="username ${usernameClass}">${msg.username}</span>
+                                <span class="timestamp">${formattedTimestamp}</span>
+                            </div>
+                            <p class="message-content ${messageContentClass}">${msg.content}</p>
+                        </div>
+                    `;
+                })
+                .join('');
+        }
+    }
+
+    // Handle message form submission
+    function handleMessageSubmit(event) {
+        event.preventDefault(); // Prevent page refresh on submit
+
+        const username = document.getElementById('nameInput').value.trim();
+        const content = document.getElementById('messageInput').value.trim(); // Now using textarea input
+
+        if (!username || !content) {
+            alert("Please enter both your name and a message.");
+            return;
+        }
+
+        const messageData = { username, content };
+
+        fetch('/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(messageData)
+        })
+        .then(response => {
+            if (response.ok) {
+                fetchMessages(); // Refresh messages after sending
+                document.getElementById('messageInput').value = ''; // Clear input after sending
+            } else {
+                console.error("Failed to send message");
+                alert("Failed to send message.");
+            }
+        })
+        .catch(error => {
+            console.error("Error sending message:", error);
+            alert("Error sending message.");
+        });
+    }
+
+    // Event listeners for submitting the form and refreshing messages
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('messageForm').addEventListener('submit', handleMessageSubmit);
+    });
+
     document.getElementById('refreshButton').addEventListener('click', function() {
         fetchMessages();
         document.getElementById('refreshIcon').classList.add('spinning');
@@ -175,8 +212,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Fetch initial messages and set up event listeners
     fetchMessages();
-    fetchVisitorCount();
-});
+    addFormattingListeners();
 </script>
 </body>
 </html>
