@@ -53,13 +53,11 @@ BAD_WORDS = load_bad_words()  # Load the bad words when the app starts
 
 # Function to replace profanity in the text with asterisks
 def replace_profanity(text):
-    # Normalize text (lowercase and remove non-alphanumeric characters)
-    text = text.lower()
     for bad_word in BAD_WORDS:
-        # Replace each bad word with the equivalent number of asterisks
-        text = re.sub(r'\b' + re.escape(bad_word) + r'\b', '*' * len(bad_word), text)
+        # Replace each bad word with the equivalent number of asterisks, preserving case
+        text = re.sub(r'\b' + re.escape(bad_word) + r'\b', lambda m: '*' * len(m.group(0)), text)
     return text
-
+    
 # Endpoint to render the HTML page
 @app.route('/')
 def index():
