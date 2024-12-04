@@ -77,6 +77,12 @@ def get_messages():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# Function to limit the message to 100 characters
+def limit_message_length(content, max_length=100):
+    if len(content) > max_length:
+        content = content[:max_length]  # Truncate to the first 100 characters
+    return content
+
 # Endpoint to add a new message via POST
 @app.route('/messages', methods=['POST'])
 def post_message():
@@ -93,8 +99,18 @@ def post_message():
         if not user_id:
             return jsonify({'error': 'User session expired or not found'}), 400
 
+        # Limit the message to 100 characters
+        limited_content = limit_message_length(content)
+        
+        # Check if content was truncated and return feedback
+        if len(content) > 100:
+            return jsonify({
+                'message': 'Your message was too long and has been truncated to 100 characters.',
+                'content': limited_content
+            }), 200
+
         # Replace profanity in the content with asterisks
-        sanitized_content = replace_profanity(content)
+        sanitized_content = replace_profanity(limited_content)
 
         new_message = Message(username=username, content=sanitized_content, timestamp=timestamp, user_id=user_id)
         db.session.add(new_message)
@@ -126,8 +142,18 @@ def edit_message(id):
         message = Message.query.get(id)
 
         if message and message.user_id == session.get('user_id'):  # Ensure the user owns the message
+            # Limit the message to 100 characters
+            limited_content = limit_message_length(content)
+            
+            # Check if content was truncated and return feedback
+        if len(content) > 100:
+            return jsonify({
+                'message': 'Your message was too long and has been truncated to 100 characters.',
+                'content': limited_content
+            }), 200
+
             # Replace profanity in the new content with asterisks
-            sanitized_content = replace_profanity(content)
+            sanitized_content = replace_profanity(limited_content)
             message.content = sanitized_content
             db.session.commit()
             return jsonify({"message": "Message updated successfully"}), 200
