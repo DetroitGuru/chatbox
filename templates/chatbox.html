@@ -205,7 +205,7 @@
         }
 /* === Message Actions Container === */
 /* Initially hide the message actions */
-.message-actions {
+.message-actions.hidden {
     display: none;
     gap: 10px;
     margin-top: 8px;
@@ -343,7 +343,7 @@
     function applyFormatting(command) {
         const messageInput = document.getElementById('messageInput');
         if (messageInput) {
-            document.execCommand(command, false, null);
+            document.queryCommandSupported(command, false, null);
             messageInput.focus(); // Keep focus on the div to retain the keyboard
         }
     }
@@ -365,9 +365,9 @@
                                 <span class="username ${usernameClass}">${msg.username}</span>
                                 <span class="timestamp">${formattedTimestamp}</span>
                             </div>
-                            <p class="message-content ${messageContentClass}">${msg.content}</p>
+                            <p class="message-content ${messageContentClass}">${escapeHtml(msg.content)}</p>
                             ${isCurrentUserMessage ? `
-                            <div class="message-actions" style="display: none;">
+                            <div class="message-actions hidden">
                                 <button class="edit-btn" data-id="${msg.id}">Edit</button>
                                 <button class="delete-btn" data-id="${msg.id}">Delete</button>
                             </div>
@@ -403,44 +403,44 @@
 
     // Function to handle long press (both mouse and touch events)
     function handleLongPress(messageElement) {
-        let pressTimer;
+    let pressTimer;
 
-        // Mouse events for desktop
-        messageElement.addEventListener('mousedown', function () {
-            pressTimer = setTimeout(() => {
-                const messageActions = messageElement.querySelector('.message-actions');
-                if (messageActions) {
-                    messageActions.style.display = 'flex'; // Show the buttons
-                }
-            }, 1000); // 1 second long press
-        });
+    // Mouse events for desktop
+    messageElement.addEventListener('mousedown', function () {
+        pressTimer = setTimeout(() => {
+            const messageActions = messageElement.querySelector('.message-actions');
+            if (messageActions) {
+                messageActions.classList.remove('hidden'); // Show the buttons by removing 'hidden' class
+            }
+        }, 1000); // 1 second long press
+    });
 
-        messageElement.addEventListener('mouseup', function () {
-            clearTimeout(pressTimer); // Cancel long press if the mouse is released
-        });
+    messageElement.addEventListener('mouseup', function () {
+        clearTimeout(pressTimer); // Cancel long press if the mouse is released
+    });
 
-        messageElement.addEventListener('mouseleave', function () {
-            clearTimeout(pressTimer); // Cancel long press if the mouse leaves the message
-        });
+    messageElement.addEventListener('mouseleave', function () {
+        clearTimeout(pressTimer); // Cancel long press if the mouse leaves the message
+    });
 
-        // Touch events for mobile
-        messageElement.addEventListener('touchstart', function () {
-            pressTimer = setTimeout(() => {
-                const messageActions = messageElement.querySelector('.message-actions');
-                if (messageActions) {
-                    messageActions.style.display = 'flex'; // Show the buttons
-                }
-            }, 1000); // 1 second long press
-        });
+    // Touch events for mobile
+    messageElement.addEventListener('touchstart', function () {
+        pressTimer = setTimeout(() => {
+            const messageActions = messageElement.querySelector('.message-actions');
+            if (messageActions) {
+                messageActions.classList.remove('hidden'); // Show the buttons by removing 'hidden' class
+            }
+        }, 1000); // 1 second long press
+    });
 
-        messageElement.addEventListener('touchend', function () {
-            clearTimeout(pressTimer); // Cancel long press if the touch is released
-        });
+    messageElement.addEventListener('touchend', function () {
+        clearTimeout(pressTimer); // Cancel long press if the touch is released
+    });
 
-        messageElement.addEventListener('touchcancel', function () {
-            clearTimeout(pressTimer); // Cancel long press if the touch is canceled
-        });
-    }
+    messageElement.addEventListener('touchcancel', function () {
+        clearTimeout(pressTimer); // Cancel long press if the touch is canceled
+    });
+}
 
     // Edit message function
     function editMessage(messageId) {
@@ -509,25 +509,24 @@
         const messageData = { username, content };
 
         fetch('/messages', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(messageData)
-        })
-        .then(response => {
-            if (response.ok) {
-                fetchMessages(); // Refresh messages after sending
-                document.getElementById('messageInput').innerText = ''; // Clear input after sending
-            } else {
-                console.error("Failed to send message");
-            }
-        })
-        .catch(error => console.error("Error sending message:", error));
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(messageData)
+})
+.then(response => {
+    if (!response.ok) {
+        throw new Error(`Failed to send message: ${response.statusText}`);
     }
+    return response.json();
+})
+.then(data => {
+    fetchMessages(); // Refresh messages after sending
+    document.getElementById('messageInput').innerText = ''; // Clear input after sending
+})
+.catch(error => console.error(error));
 
     // Event listeners for submitting the form and refreshing messages
-    document.addEventListener('DOMContentLoaded', function () {
-        document.getElementById('messageForm').addEventListener('submit', handleMessageSubmit);
-    });
+    document.getElementById('messageForm').addEventListener('submit', handleMessageSubmit);
 
     document.getElementById('refreshButton').addEventListener('click', function() {
         fetchMessages();
